@@ -6,50 +6,62 @@ GO
 -- using the object id to check if the stored procedure with the given name already --
 -- exists. If it exists, it will be dropped from the context.                       --
 --------------------------------------------------------------------------------------
-IF OBJECT_ID('USP_', 'P') IS NOT NULL
-	DROP PROCEDURE [USP_];
+IF OBJECT_ID('USP_CreatePlaylist', 'P') IS NOT NULL
+	DROP PROCEDURE [USP_CreatePlaylist];
 GO
 
 
 ----------------------------------------------------------------
 -- creation of a stored procedure with the following purpose: --
---    <PURPOSE>                                               --
+--    creates a new playlist for a given user                 --
 ----------------------------------------------------------------
-CREATE PROCEDURE [USP_] (
-	@Param1		NVARCHAR(32),
-	@Param2		FLOAT,
-	@Result		INT OUTPUT
+CREATE PROCEDURE [USP_CreatePlaylist] (
+	@UserID			INT,
+	@Title			NVARCHAR(32),
+	@Description	NVARCHAR(200),
+	@Result			INT = 0 OUTPUT
 )
 AS BEGIN
-	-- no console outputs are needed here
-	SET NOCOUNT ON;
+	-- count number of affected rows
+	SET NOCOUNT OFF;
 
 	-- use transactions to rollback invalid statements
 	BEGIN TRANSACTION;
-		-- stored procedure code here
-	ROLLBACK;
+		BEGIN TRY;
+			INSERT INTO
+				[playlist] ([description], [title], [fk_user_id])
+				VALUES (@Description, @Title, @UserID);
+			SELECT @Result = @@ROWCOUNT;
+		END TRY BEGIN CATCH;
+			-- Undo all changes when an error occurs
+			ROLLBACK;
+			RETURN 1;
+		END CATCH;
+	COMMIT;
 END
 GO
 
 ---------------------------------------------------------------------------
 -- run the stored procedure to check correct behaviour and return values --
 ---------------------------------------------------------------------------
+SELECT * FROM [user];
 DECLARE @Out INT;
-EXEC dbo.[USP_]
-	@Param1 = 'Hello World',
-	@Param2 = 10,
+EXEC dbo.[USP_CreatePlaylist]
+	@UserID = 3,
+	@Title = 'My Playlist',
+	@Description = 'This is my Rock & Roll Playlist for working out',
 	@Result = @Out OUTPUT;
 SELECT @Out;
 
 
 ---------------------------------------------------------------------------
 -- add a test dataset to be sure the results given by the stored         --
--- procedure are correct.
+-- procedure are correct.                                                --
 ---------------------------------------------------------------------------
 INSERT INTO
-	[table] ([col1], [col2], [coln])
-	VALUES (val1, val2, valn);
+	[user] ([username], [firstname], [lastname], [password], [email])
+	VALUES ('Daniel8855', 'Daniel', 'Kleebinder', 'mYp@ccW#r1', 'daniel.kleebinder@gmx.net');
 
 -- Delete Test Dataset
-DELETE FROM [table]
-WHERE [col1] = val1;
+DELETE FROM [user]
+WHERE [username] = 'Daniel8855';

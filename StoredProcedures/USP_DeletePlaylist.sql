@@ -6,50 +6,50 @@ GO
 -- using the object id to check if the stored procedure with the given name already --
 -- exists. If it exists, it will be dropped from the context.                       --
 --------------------------------------------------------------------------------------
-IF OBJECT_ID('USP_', 'P') IS NOT NULL
-	DROP PROCEDURE [USP_];
+IF OBJECT_ID('USP_DeletePlaylist', 'P') IS NOT NULL
+	DROP PROCEDURE [USP_DeletePlaylist];
 GO
 
 
 ----------------------------------------------------------------
 -- creation of a stored procedure with the following purpose: --
---    <PURPOSE>                                               --
+--    deletes the playlist with the given id                  --
 ----------------------------------------------------------------
-CREATE PROCEDURE [USP_] (
-	@Param1		NVARCHAR(32),
-	@Param2		FLOAT,
+CREATE PROCEDURE [USP_DeletePlaylist] (
+	@PlaylistID	INT,
 	@Result		INT OUTPUT
 )
 AS BEGIN
-	-- no console outputs are needed here
-	SET NOCOUNT ON;
-
+	-- count number of affected rows
+	SET NOCOUNT OFF;
+	
 	-- use transactions to rollback invalid statements
 	BEGIN TRANSACTION;
-		-- stored procedure code here
-	ROLLBACK;
+		BEGIN TRY;
+			DELETE FROM [playlist] WHERE [playlist_id] = @PlaylistID;
+			SELECT @Result = @@ROWCOUNT;
+		END TRY BEGIN CATCH;
+			-- Undo all changes when an error occurs
+			ROLLBACK;
+			SET @Result = 0;
+			RETURN 1;
+		END CATCH;
+	COMMIT;
 END
 GO
 
 ---------------------------------------------------------------------------
 -- run the stored procedure to check correct behaviour and return values --
 ---------------------------------------------------------------------------
+SELECT * FROM [playlist];
 DECLARE @Out INT;
-EXEC dbo.[USP_]
-	@Param1 = 'Hello World',
-	@Param2 = 10,
+EXEC dbo.[USP_DeletePlaylist]
+	@PlaylistID = 3,
 	@Result = @Out OUTPUT;
 SELECT @Out;
 
 
 ---------------------------------------------------------------------------
 -- add a test dataset to be sure the results given by the stored         --
--- procedure are correct.
+-- procedure are correct.                                                --
 ---------------------------------------------------------------------------
-INSERT INTO
-	[table] ([col1], [col2], [coln])
-	VALUES (val1, val2, valn);
-
--- Delete Test Dataset
-DELETE FROM [table]
-WHERE [col1] = val1;

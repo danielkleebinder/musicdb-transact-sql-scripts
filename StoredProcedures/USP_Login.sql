@@ -19,7 +19,7 @@ GO
 CREATE PROCEDURE [USP_Login] (
 	@Username	NVARCHAR(32),
 	@Password	NVARCHAR(32),
-	@Result		INT OUTPUT
+	@Result		INT = 0 OUTPUT
 )
 AS BEGIN
 	-- no console outputs are needed here
@@ -46,7 +46,7 @@ SELECT @Out;
 
 ---------------------------------------------------------------------------
 -- add a test dataset to be sure the results given by the stored         --
--- procedure are correct.
+-- procedure are correct.                                                --
 ---------------------------------------------------------------------------
 INSERT INTO
 	[user] ([username], [firstname], [lastname], [password], [email])
