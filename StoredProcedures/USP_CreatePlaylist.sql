@@ -31,10 +31,13 @@ AS BEGIN
 			INSERT INTO
 				[playlist] ([description], [title], [fk_user_id])
 				VALUES (@Description, @Title, @UserID);
+			
+			-- fetch the resulting affected row count
 			SELECT @Result = @@ROWCOUNT;
 		END TRY BEGIN CATCH;
 			-- Undo all changes when an error occurs
 			ROLLBACK;
+			SET @Result = 0;
 			RETURN 1;
 		END CATCH;
 	COMMIT;

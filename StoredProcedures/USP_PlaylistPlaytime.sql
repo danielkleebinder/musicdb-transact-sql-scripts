@@ -25,16 +25,22 @@ AS BEGIN
 	SET NOCOUNT ON;
 
 	-- check if the playlist even exists
-	IF (SELECT Count(*) FROM [playlist] where playlist_id = @PlaylistID) <= (0) BEGIN
+	IF (SELECT Count(*) FROM [playlist] where playlist_id = @PlaylistID) <= (0) BEGIN;
+		SET @Result = 0;
 		RETURN;
 	END
-
+	
 	-- usage of select statement to sum up all the title durations in the
 	-- given playlist on the sql server side
-	SELECT @Result = Sum(t.duration) FROM [playlist] AS p
-	INNER JOIN [playlist_title] AS pt ON pt.fk_playlist_id = p.playlist_id
-	INNER JOIN [title] AS t ON t.title_id = pt.fk_title_id
-	WHERE p.playlist_id = @PlaylistID;
+	BEGIN TRY;
+		SELECT @Result = Sum(t.duration) FROM [playlist] AS p
+		INNER JOIN [playlist_title] AS pt ON pt.fk_playlist_id = p.playlist_id
+		INNER JOIN [title] AS t ON t.title_id = pt.fk_title_id
+		WHERE p.playlist_id = @PlaylistID;
+	END TRY BEGIN CATCH;
+		SET @Result = -1;
+		RETURN 1;
+	END CATCH;
 END
 GO
 
@@ -43,7 +49,7 @@ GO
 ---------------------------------------------------------------------------
 DECLARE @Out INT;
 EXEC dbo.[USP_PlaytimeOfPlaylist]
-	@PlaylistID = 4,
+	@PlaylistID = 1,
 	@Result = @Out OUTPUT;
 SELECT @Out;
 

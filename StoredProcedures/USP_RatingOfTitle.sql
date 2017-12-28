@@ -6,28 +6,37 @@ GO
 -- using the object id to check if the stored procedure with the given name already --
 -- exists. If it exists, it will be dropped from the context.                       --
 --------------------------------------------------------------------------------------
-IF OBJECT_ID('USP_', 'P') IS NOT NULL
-	DROP PROCEDURE [USP_];
+IF OBJECT_ID('USP_RatingOfTitle', 'P') IS NOT NULL
+	DROP PROCEDURE [USP_RatingOfTitle];
 GO
 
 
 ----------------------------------------------------------------
 -- creation of a stored procedure with the following purpose: --
---    <PURPOSE>                                               --
+--    computes the average rating of a title.                 --
 ----------------------------------------------------------------
-CREATE PROCEDURE [USP_] (
-	@Param1		NVARCHAR(32),
-	@Param2		FLOAT,
-	@Result		INT OUTPUT
+CREATE PROCEDURE [USP_RatingOfTitle] (
+	@TitleID	INT,
+	@Result		FLOAT = 0 OUTPUT
 )
 AS BEGIN
 	-- no console outputs are needed here
 	SET NOCOUNT ON;
 
-	-- use transactions to rollback invalid statements
-	BEGIN TRANSACTION;
-		-- stored procedure code here
-	ROLLBACK;
+	-- check if there are any rating for the given title
+	IF (SELECT Count(*) FROM [rating] where fk_title_id = @TitleID) <= (0) BEGIN;
+		SET @Result = 0;
+		RETURN;
+	END
+
+	-- use the average function to compute the title rating
+	BEGIN TRY;
+		SELECT @Result = Avg(r.ratingvalue) FROM [rating] AS r
+		WHERE r.fk_title_id = @TitleID;
+	END TRY BEGIN CATCH;
+		SET @Result = -1;
+		RETURN 1;
+	END CATCH;
 END
 GO
 
@@ -35,21 +44,13 @@ GO
 -- run the stored procedure to check correct behaviour and return values --
 ---------------------------------------------------------------------------
 DECLARE @Out INT;
-EXEC dbo.[USP_]
-	@Param1 = 'Hello World',
-	@Param2 = 10,
+EXEC dbo.[USP_RatingOfTitle]
+	@TitleID = 1,
 	@Result = @Out OUTPUT;
 SELECT @Out;
 
 
 ---------------------------------------------------------------------------
 -- add a test dataset to be sure the results given by the stored         --
--- procedure are correct.
+-- procedure are correct.                                                --
 ---------------------------------------------------------------------------
-INSERT INTO
-	[table] ([col1], [col2], [coln])
-	VALUES (val1, val2, valn);
-
--- Delete Test Dataset
-DELETE FROM [table]
-WHERE [col1] = val1;

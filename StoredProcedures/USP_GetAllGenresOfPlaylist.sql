@@ -22,22 +22,23 @@ AS BEGIN
 	-- no console outputs are needed here
 	SET NOCOUNT ON;
 
-	-- use transactions to rollback invalid statements
-	BEGIN TRANSACTION;
+	-- use try-catch to prevent exceptions
+	BEGIN TRY;
 		SELECT g.genre_id, g.name FROM [playlist] AS p
 		INNER JOIN [playlist_title] AS pt ON pt.fk_playlist_id = p.playlist_id
 		INNER JOIN [title] AS t ON t.title_id = pt.fk_title_id
 		INNER JOIN [genre] AS g ON g.genre_id = t.fk_genre_id
 		WHERE p.playlist_id = @PlaylistID;
-	ROLLBACK;
+	END TRY BEGIN CATCH;
+		RETURN 1;
+	END CATCH;
 END
 GO
 
 ---------------------------------------------------------------------------
 -- run the stored procedure to check correct behaviour and return values --
 ---------------------------------------------------------------------------
-EXEC dbo.[USP_GetAllGenresOfPlaylist]
-	@PlaylistID = 1
+EXEC dbo.[USP_GetAllGenresOfPlaylist] @PlaylistID = 1;
 
 
 ---------------------------------------------------------------------------

@@ -87,8 +87,8 @@ CREATE TABLE [album] (
 	[album_id]		INT				NOT NULL IDENTITY(1,1) PRIMARY KEY,
 	[name]			NVARCHAR(32)	NOT NULL,
 	[releaseyear]	SMALLINT		NOT NULL,
-	[fk_genre_id]	INT				NOT NULL FOREIGN KEY REFERENCES genre (genre_id),
-	[fk_label_id]	INT				NOT NULL FOREIGN KEY REFERENCES label (label_id)
+	[fk_genre_id]	INT				NULL FOREIGN KEY REFERENCES genre (genre_id),
+	[fk_label_id]	INT				NULL FOREIGN KEY REFERENCES label (label_id)
 );
 GO
 
@@ -99,7 +99,7 @@ CREATE TABLE [interpret] (
 	[name]			NVARCHAR(32)	NOT NULL,
 	[origin]		NVARCHAR(32)	NOT NULL,
 	[website]		NVARCHAR(32)	NULL,
-	[fk_genre_id]	INT				NOT NULL FOREIGN KEY REFERENCES genre (genre_id)
+	[fk_genre_id]	INT				NULL FOREIGN KEY REFERENCES genre (genre_id)
 );
 GO
 
@@ -110,9 +110,9 @@ CREATE TABLE [title] (
 	[name]			NVARCHAR(32)	NOT NULL,
 	[titlenumber]	SMALLINT		NULL,
 	[duration]		SMALLINT		NOT	NULL,
-	[bitrate]		SMALLINT		NOT NULL,
+	[bitrate]		INT				NULL,
 	[fk_genre_id]	INT				NOT NULL FOREIGN KEY REFERENCES genre (genre_id),
-	[fk_album_id]	INT				NOT NULL FOREIGN KEY REFERENCES album (album_id)
+	[fk_album_id]	INT				NULL FOREIGN KEY REFERENCES album (album_id)
 );
 GO
 

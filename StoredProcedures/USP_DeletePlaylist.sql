@@ -17,7 +17,7 @@ GO
 ----------------------------------------------------------------
 CREATE PROCEDURE [USP_DeletePlaylist] (
 	@PlaylistID	INT,
-	@Result		INT OUTPUT
+	@Result		INT = 0 OUTPUT
 )
 AS BEGIN
 	-- count number of affected rows
