@@ -38,7 +38,7 @@ GO
 ---------------------------------------------------------------------------
 DECLARE @Out INT;
 EXEC dbo.[USP_Login]
-	@Username = 'Daniel8855',
+	@Username = 'Peter8855',
 	@Password = 'mYp@ccW#r1',
 	@Result = @Out OUTPUT;
 SELECT @Out;
@@ -50,8 +50,8 @@ SELECT @Out;
 ---------------------------------------------------------------------------
 INSERT INTO
 	[user] ([username], [firstname], [lastname], [password], [email])
-	VALUES ('Daniel8855', 'Daniel', 'Kleebinder', 'mYp@ccW#r1', 'daniel.kleebinder@gmx.net');
+	VALUES ('Peter8855', 'Peter', 'Müller', 'mYp@ccW#r1', 'peter.müller@gmail.com');
 
 -- Delete Test Dataset
 DELETE FROM [user]
-WHERE [username] = 'Daniel8855';
+WHERE [username] = 'Peter8855';

@@ -28,7 +28,7 @@ INSERT INTO [title] ([name], [titlenumber], [duration], [bitrate], [fk_genre_id]
 INSERT INTO [title] ([name], [titlenumber], [duration], [bitrate], [fk_genre_id]) VALUES ('Title #4', 2, 400, 40000, 1);
 INSERT INTO [title] ([name], [titlenumber], [duration], [bitrate], [fk_genre_id]) VALUES ('Title #5', 1, 250, 30000, 4);
 
-INSERT INTO [user] ([username], [password], [firstname], [lastname], [email]) VALUES ('Daniel8855', 'Daniel', 'Kleebinder', 'mYp@ccW#r1', 'daniel.kleebinder@gmx.net');
+INSERT INTO [user] ([username], [password], [firstname], [lastname], [email]) VALUES ('Peter8855', 'Peter', 'Müller', 'mYp@ccW#r1', 'peter.müller@gmail.com');
 
 INSERT INTO [playlist] ([description], [title], [fk_genre_id], [fk_user_id]) VALUES ('This is my first playlist', 'Workout Playlist', 1, 1);
 

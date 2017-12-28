@@ -18,7 +18,7 @@ GO
 CREATE PROCEDURE [USP_] (
 	@Param1		NVARCHAR(32),
 	@Param2		FLOAT,
-	@Result		INT OUTPUT
+	@Result		INT = 0 OUTPUT
 )
 AS BEGIN
 	-- no console outputs are needed here
@@ -44,7 +44,7 @@ SELECT @Out;
 
 ---------------------------------------------------------------------------
 -- add a test dataset to be sure the results given by the stored         --
--- procedure are correct.
+-- procedure are correct.                                                --
 ---------------------------------------------------------------------------
 INSERT INTO
 	[table] ([col1], [col2], [coln])
