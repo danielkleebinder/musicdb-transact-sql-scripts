@@ -15,55 +15,60 @@ GO
 ------------------------------------------------------------------------------
 CREATE TRIGGER [TR_UniqueTitleNumberInAlbum] ON [title]
 INSTEAD OF INSERT				-- SQL Server does not support BEFORE triggers
-AS BEGIN
+AS BEGIN --open
 	DECLARE @TitleNumber SMALLINT,
-			@TitleAlbum	INT;
+			@TitleAlbum	INT,
+			@TitleBitrate INT,
+			@TitleDuration SMALLINT,
+			@TitleGenre INT,
+			@TitleName NVARCHAR(32);
 
 	DECLARE CUR_InsertedTitle CURSOR FORWARD_ONLY FOR
-		SELECT ins.[titlenumber], ins.[fk_album_id]
+		SELECT ins.[titlenumber], ins.[fk_album_id], ins.[bitrate], ins.[duration], ins.[fk_genre_id], ins.[name]
 		FROM [inserted] AS ins;
 
-	BEGIN TRANSACTION;
+	BEGIN TRANSACTION; -- open
 		OPEN CUR_InsertedTitle;
-		FETCH NEXT FROM CUR_InsertedTitle INTO @TitleNumber, @TitleAlbum;
+		FETCH NEXT FROM CUR_InsertedTitle INTO @TitleNumber, @TitleAlbum, @TitleBitrate, @TitleDuration, @TitleGenre, @TitleName;
 
-		WHILE @@FETCH_STATUS = 0 BEGIN;
+		WHILE @@FETCH_STATUS = 0 BEGIN; -- open
 			IF ((SELECT Count(*) FROM [title] AS t
 					WHERE t.[titlenumber] = @TitleNumber
 					AND t.[fk_album_id] = @TitleAlbum) > 0)
-			BEGIN;
+			BEGIN
 				ROLLBACK;
 				
 				-- close cursor and free allocated memory to prevent memory leaks
 				CLOSE CUR_InsertedTitle;
 				DEALLOCATE CUR_InsertedTitle;
 
-				THROW 47000, 'Titlenumber already exists in this album', 2;
-			END;
+				THROW 50000, 'Titlenumber already exists in this album', 2;
+			END; -- end if
 
-			BEGIN TRY;
+			BEGIN TRY
 				INSERT INTO
 					[title] ([name], [titlenumber], [duration], [bitrate], [fk_genre_id], [fk_album_id])
-					VALUES ();
-			END TRY BEGIN CATCH;
+					VALUES (@TitleName, @TitleNumber, @TitleDuration, @TitleBitrate, @TitleGenre, @TitleAlbum);
+			END TRY BEGIN CATCH
 				ROLLBACK;
-
-				-- close cursor and free allocated memory to prevent memory leaks
 				CLOSE CUR_InsertedTitle;
 				DEALLOCATE CUR_InsertedTitle;
-
-				RETURN 1;
+				THROW;
 			END CATCH;
 			
-			FETCH NEXT FROM CUR_InsertedTitle INTO @TitleNumber, @TitleAlbum;
+			FETCH NEXT FROM CUR_InsertedTitle INTO @TitleNumber, @TitleAlbum, @TitleBitrate, @TitleDuration, @TitleGenre, @TitleName;
 		END;
-	ROLLBACK;
-
 	-- close cursor and free allocated memory to prevent memory leaks
 	CLOSE CUR_InsertedTitle;
 	DEALLOCATE CUR_InsertedTitle;
+	commit;
+END;
 
-	/*
+
+
+	-- close cursor and free allocated memory to prevent memory leaks
+
+/*	/*
 	DECLARE CUR_AlbumTitle CURSOR FORWARD_ONLY FOR
 		SELECT t.[titlenumber] FROM [title] AS t
 		INNER JOIN [inserted] AS ins ON ins.fk_album_id = t.fk_album_id;
@@ -88,12 +93,18 @@ AS BEGIN
 END
 GO
 
-
+*/
 ------------------------------------------------------------------------------
 -- test code for checking trigger behavior.                                 --
 ------------------------------------------------------------------------------
 INSERT INTO [album] ([name], [releaseyear]) VALUES ('Album #1', 2017);
+INSERT INTO [album] ([name], [releaseyear]) VALUES ('Album #2', 2012);
 INSERT INTO [title] ([name], [titlenumber], [duration], [bitrate], [fk_genre_id], [fk_album_id]) VALUES ('Title #1', 1, 300, 20000, 1, 1);
 INSERT INTO [title] ([name], [titlenumber], [duration], [bitrate], [fk_genre_id], [fk_album_id]) VALUES ('Title #2', 1, 400, 30000, 1, 1);
+INSERT INTO [title] ([name], [titlenumber], [duration], [bitrate], [fk_genre_id], [fk_album_id]) VALUES ('MySong', 1, 400, 30000, 1, 2);
+INSERT INTO [title] ([name], [titlenumber], [duration], [bitrate], [fk_genre_id], [fk_album_id]) VALUES ('MySong 2', 2, 400, 30000, 1, 2);
+INSERT INTO [title] ([name], [titlenumber], [duration], [bitrate], [fk_genre_id], [fk_album_id]) VALUES ('MySong 3', 2, 400, 30000, 1, 1);
+INSERT INTO [title] ([name], [titlenumber], [duration], [bitrate], [fk_genre_id], [fk_album_id]) VALUES ('MySong 4', 3, 400, 30000, 1, 1);
 
 SELECT * FROM [title];
+SELECT * FROM [album];
