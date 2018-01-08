@@ -15,7 +15,7 @@ GO
 ------------------------------------------------------------------------------
 CREATE TRIGGER [TR_UniqueTitleNumberInAlbum] ON [title]
 INSTEAD OF INSERT				-- SQL Server does not support BEFORE triggers
-AS BEGIN --open
+AS BEGIN
 	DECLARE @TitleNumber SMALLINT,
 			@TitleAlbum	INT,
 			@TitleBitrate INT,
@@ -27,11 +27,11 @@ AS BEGIN --open
 		SELECT ins.[titlenumber], ins.[fk_album_id], ins.[bitrate], ins.[duration], ins.[fk_genre_id], ins.[name]
 		FROM [inserted] AS ins;
 
-	BEGIN TRANSACTION; -- open
+	BEGIN TRANSACTION;
 		OPEN CUR_InsertedTitle;
 		FETCH NEXT FROM CUR_InsertedTitle INTO @TitleNumber, @TitleAlbum, @TitleBitrate, @TitleDuration, @TitleGenre, @TitleName;
 
-		WHILE @@FETCH_STATUS = 0 BEGIN; -- open
+		WHILE @@FETCH_STATUS = 0 BEGIN;
 			IF ((SELECT Count(*) FROM [title] AS t
 					WHERE t.[titlenumber] = @TitleNumber
 					AND t.[fk_album_id] = @TitleAlbum) > 0)
@@ -49,6 +49,7 @@ AS BEGIN --open
 				INSERT INTO
 					[title] ([name], [titlenumber], [duration], [bitrate], [fk_genre_id], [fk_album_id])
 					VALUES (@TitleName, @TitleNumber, @TitleDuration, @TitleBitrate, @TitleGenre, @TitleAlbum);
+					FETCH NEXT FROM CUR_InsertedTitle INTO @TitleNumber, @TitleAlbum, @TitleBitrate, @TitleDuration, @TitleGenre, @TitleName;
 			END TRY BEGIN CATCH
 				ROLLBACK;
 				CLOSE CUR_InsertedTitle;
@@ -99,12 +100,19 @@ GO
 ------------------------------------------------------------------------------
 INSERT INTO [album] ([name], [releaseyear]) VALUES ('Album #1', 2017);
 INSERT INTO [album] ([name], [releaseyear]) VALUES ('Album #2', 2012);
-INSERT INTO [title] ([name], [titlenumber], [duration], [bitrate], [fk_genre_id], [fk_album_id]) VALUES ('Title #1', 1, 300, 20000, 1, 1);
-INSERT INTO [title] ([name], [titlenumber], [duration], [bitrate], [fk_genre_id], [fk_album_id]) VALUES ('Title #2', 1, 400, 30000, 1, 1);
-INSERT INTO [title] ([name], [titlenumber], [duration], [bitrate], [fk_genre_id], [fk_album_id]) VALUES ('MySong', 1, 400, 30000, 1, 2);
-INSERT INTO [title] ([name], [titlenumber], [duration], [bitrate], [fk_genre_id], [fk_album_id]) VALUES ('MySong 2', 2, 400, 30000, 1, 2);
-INSERT INTO [title] ([name], [titlenumber], [duration], [bitrate], [fk_genre_id], [fk_album_id]) VALUES ('MySong 3', 2, 400, 30000, 1, 1);
-INSERT INTO [title] ([name], [titlenumber], [duration], [bitrate], [fk_genre_id], [fk_album_id]) VALUES ('MySong 4', 3, 400, 30000, 1, 1);
+INSERT INTO [title] ([name], [titlenumber], [duration], [bitrate], [fk_genre_id], [fk_album_id]) VALUES ('Title #1', 1, 300, 20000, 1, 9);
+INSERT INTO [title] ([name], [titlenumber], [duration], [bitrate], [fk_genre_id], [fk_album_id]) VALUES ('Title #2', 2, 400, 30000, 1, 9);
+INSERT INTO [title] ([name], [titlenumber], [duration], [bitrate], [fk_genre_id], [fk_album_id]) VALUES ('MySong', 3, 400, 30000, 1, 9);
+INSERT INTO [title] ([name], [titlenumber], [duration], [bitrate], [fk_genre_id], [fk_album_id]) VALUES ('MySong 2', 2, 400, 30000, 1, 10);
+INSERT INTO [title] ([name], [titlenumber], [duration], [bitrate], [fk_genre_id], [fk_album_id]) VALUES ('MySong 3', 4, 400, 30000, 1, 10);
+INSERT INTO [title] ([name], [titlenumber], [duration], [bitrate], [fk_genre_id], [fk_album_id]) VALUES ('MySong 4', 6, 400, 30000, 1, 10);
+INSERT INTO [title] ([name], [titlenumber], [duration], [bitrate], [fk_genre_id], [fk_album_id]) VALUES ('MySong 4', 7, 400, 30000, 1, 10);
+INSERT INTO [rating] ([ratingvalue], [comment], [fk_title_id], [fk_user_id]) VALUES (5, 'Really nice track!', 1, 1);
 
 SELECT * FROM [title];
 SELECT * FROM [album];
+select * from rating;
+
+delete from title
+delete from album
+delete from rating
