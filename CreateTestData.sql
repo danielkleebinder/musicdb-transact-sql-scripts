@@ -1180,17 +1180,36 @@ ORDER BY fk_title_id
 
 --fill rating table
 INSERT INTO [rating] ([ratingvalue], [fk_title_id], [fk_user_id])
-SELECT 5, title.title_id, user.user_id
+SELECT 5, dbo.title.title_id, [user].user_id
 FROM title
-OUTER RIGHT JOIN user
-on title.title_id = user.user_id
-
+LEFT OUTER JOIN [user]
+ON title.title_id = [user].user_id
 
 --playlist table
+INSERT INTO [playlist] ([title], [fk_genre_id], [fk_user_id])
+SELECT TOP 100 Concat(Left([user].username, 19), '''s playlist'), genre.genre_id, [user].user_id
+FROM [user]
+JOIN genre
+on (([user].user_id % (SELECT Count (*) FROM genre))+1) = genre_id;
 
+SELECT * FROM playlist
 
 --fill playlist_title table
+DECLARE @counter INT
 
+SET @counter = 0
+WHILE @counter < 100
+	BEGIN
+		INSERT INTO [playlist_title] ([fk_playlist_id], [fk_title_id])
+		SELECT playlist.playlist_id, title.title_id
+		FROM playlist
+		join title
+		On playlist_id+@counter = title_id
+
+		SET @counter = @counter + 1
+	END;
+GO
+SELECT * FROM playlist_title
 
 
 DROP TABLE [usernameHelper];
@@ -1199,3 +1218,7 @@ DROP TABLE [surnameHelper];
 DROP TABLE [titleHelper1];
 DROP TABLE [titleHelper2];
 DROP TABLE [titleHelper3];
+
+GO  
+SET NOCOUNT OFF; 
+GO
