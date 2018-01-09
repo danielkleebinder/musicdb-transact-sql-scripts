@@ -746,9 +746,9 @@ AS BEGIN
 	-- use a basic "string-like" search, no google like algorithm, but it works
 	-- just fine :)
 	BEGIN TRY;
-		SELECT [title_id], [name], [titlenumber], [duration], [bitrate]
+		SELECT TOP 50 [title_id], [name], [titlenumber], [duration], [bitrate]
 		FROM [title] AS t
-		WHERE [name] LIKE Concat('%', @TitleName, '%');
+		WHERE Upper([name]) LIKE Upper(Concat('%', @TitleName, '%'));
 	END TRY BEGIN CATCH;
 		RETURN 1;
 	END CATCH;
@@ -1004,25 +1004,194 @@ WHERE [username] = 'Peter8855';
 
 
 
-
-
 USE [Music];
 GO
 
---clear tables
-DELETE FROM [album];
-DELETE FROM [interpret];
-DELETE FROM [label];
-DELETE FROM [rating];
-DELETE FROM [genre];
-DELETE FROM [title];
-DELETE FROM [playlist];
-DELETE FROM [playlist_title];
-DELETE FROM [title_interpret];
-DELETE FROM [user];
+GO  
+SET NOCOUNT ON;  
+
+---------------------------------
+-- delete tables if they exist --
+---------------------------------
+
+IF OBJECT_ID('playlist_title', 'U') IS NOT NULL 
+  DROP TABLE [playlist_title]; 
+GO
+
+IF OBJECT_ID('playlist', 'U') IS NOT NULL 
+  DROP TABLE [playlist]; 
+GO
+
+IF OBJECT_ID('rating', 'U') IS NOT NULL 
+  DROP TABLE [rating]; 
+GO
+
+IF OBJECT_ID('title_interpret', 'U') IS NOT NULL 
+  DROP TABLE [title_interpret]; 
+GO
+
+IF OBJECT_ID('title', 'U') IS NOT NULL 
+  DROP TABLE [title]; 
+GO
+
+IF OBJECT_ID('interpret', 'U') IS NOT NULL 
+  DROP TABLE [interpret]; 
+GO
+
+IF OBJECT_ID('album', 'U') IS NOT NULL 
+  DROP TABLE [album]; 
+GO
+
+IF OBJECT_ID('genre', 'U') IS NOT NULL 
+  DROP TABLE [genre]; 
+GO
+
+IF OBJECT_ID('label', 'U') IS NOT NULL 
+  DROP TABLE [label]; 
+GO
+
+IF OBJECT_ID('user', 'U') IS NOT NULL 
+  DROP TABLE [user]; 
+GO
+
+
+
+-------------------
+-- create tables --
+-------------------
+
+-- user --
+CREATE TABLE [user] (
+	[user_id]	INT				NOT NULL IDENTITY(1,1) PRIMARY KEY,
+	[username]	NVARCHAR(32)	NOT NULL,
+	[firstname]	NVARCHAR(32)	NOT NULL,
+	[lastname]	NVARCHAR(32)	NOT NULL,
+	[password]	NVARCHAR(32)	NOT NULL,
+	[email]		NVARCHAR(32)	NOT NULL
+);
+GO
+
+
+-- label --
+CREATE TABLE [label] (
+	[label_id]	INT				NOT NULL IDENTITY(1,1) PRIMARY KEY,
+	[name]		NVARCHAR(32)	NOT NULL,
+	[location]	NVARCHAR(32)	NOT NULL,
+	[website]	NVARCHAR(32)	NULL
+);
+GO
+
+
+-- genre --
+CREATE TABLE [genre] (
+	[genre_id]	INT				NOT NULL IDENTITY(1,1) PRIMARY KEY,
+	[name]		NVARCHAR(32)	NOT NULL
+);
+GO
+
+
+-- album --
+CREATE TABLE [album] (
+	[album_id]		INT				NOT NULL IDENTITY(1,1) PRIMARY KEY,
+	[name]			NVARCHAR(32)	NOT NULL,
+	[releaseyear]	SMALLINT		NOT NULL,
+	[fk_genre_id]	INT				NULL FOREIGN KEY REFERENCES genre (genre_id),
+	[fk_label_id]	INT				NULL FOREIGN KEY REFERENCES label (label_id)
+);
+GO
+
+
+-- interpret --
+CREATE TABLE [interpret] (
+	[interpret_id]	INT				NOT NULL IDENTITY(1,1) PRIMARY KEY,
+	[name]			NVARCHAR(32)	NOT NULL,
+	[origin]		NVARCHAR(32)	NOT NULL,
+	[website]		NVARCHAR(32)	NULL,
+	[fk_genre_id]	INT				NULL FOREIGN KEY REFERENCES genre (genre_id)
+);
+GO
+
+
+-- title --
+CREATE TABLE [title] (
+	[title_id]		INT				NOT NULL IDENTITY(1,1) PRIMARY KEY,
+	[name]			NVARCHAR(32)	NOT NULL,
+	[titlenumber]	SMALLINT		NULL,
+	[duration]		SMALLINT		NOT	NULL,
+	[bitrate]		INT				NULL,
+	[fk_genre_id]	INT				NOT NULL FOREIGN KEY REFERENCES genre (genre_id),
+	[fk_album_id]	INT				NULL FOREIGN KEY REFERENCES album (album_id)
+);
+GO
+
+
+-- title_interpret --
+CREATE TABLE [title_interpret] (
+	[fk_interpret_id]	INT			NOT NULL FOREIGN KEY REFERENCES interpret (interpret_id),
+	[fk_title_id]		INT			NOT NULL FOREIGN KEY REFERENCES title (title_id),
+	PRIMARY KEY ([fk_interpret_id], [fk_title_id])
+);
+GO
+
+
+-- rating --
+CREATE TABLE [rating] (
+	[ratingvalue]	SMALLINT		NOT NULL,
+	[comment]		NVARCHAR(200)	NULL,
+	[fk_title_id]	INT				NOT NULL FOREIGN KEY REFERENCES title (title_id),
+	[fk_user_id]	INT				NOT NULL FOREIGN KEY REFERENCES [user] ([user_id]),
+	PRIMARY KEY ([fk_title_id], [fk_user_id])
+);
+GO
+
+
+-- playlist --
+CREATE TABLE [playlist] (
+	[playlist_id]	INT				NOT NULL IDENTITY(1,1) PRIMARY KEY,
+	[description]	NVARCHAR(200)	NULL,
+	[title]			NVARCHAR(32)	NOT NULL,
+	[fk_genre_id]	INT				NULL FOREIGN KEY REFERENCES genre (genre_id),
+	[fk_user_id]	INT				NOT NULL FOREIGN KEY REFERENCES [user] ([user_id])
+);
+GO
+
+
+-- playlist_title --
+CREATE TABLE [playlist_title] (
+	[fk_playlist_id]	INT			NOT NULL FOREIGN KEY REFERENCES playlist (playlist_id),
+	[fk_title_id]		INT			NOT NULL FOREIGN KEY REFERENCES title (title_id),
+	PRIMARY KEY ([fk_playlist_id], [fk_title_id])
+);
+GO
+
+
+-------------------
+-- START TEST DATA GENERATION --
+-------------------
+
+
+
+IF OBJECT_ID('usernameHelper', 'U') IS NOT NULL 
+  DROP TABLE [usernameHelper]; 
+GO
+
+
+IF OBJECT_ID('firstnameHelper', 'U') IS NOT NULL 
+  DROP TABLE [firstnameHelper]; 
+GO
+
+
+IF OBJECT_ID('surnameHelper', 'U') IS NOT NULL 
+  DROP TABLE [surnameHelper]; 
+GO
+
+
+IF OBJECT_ID('titleHelper', 'U') IS NOT NULL 
+  DROP TABLE [titleHelper]; 
 GO
 
 -- Fill genre table
+
 INSERT INTO [genre] ([name]) VALUES ('Rock & Roll');
 INSERT INTO [genre] ([name]) VALUES ('Pop');
 INSERT INTO [genre] ([name]) VALUES ('Classic');
@@ -1249,12 +1418,23 @@ CREATE TABLE [surnameHelper] (
 	[surname]			NVARCHAR(32)	NOT NULL
 );
 
---CREATE TABLE [persons] (
---	[persons_id]		INT				NOT NULL IDENTITY(1,1) PRIMARY KEY,
---	[firstname]			NVARCHAR(32)	NOT NULL,
---	[lastname]			NVARCHAR(32)	NOT NULL
---);
---GO
+CREATE TABLE [titleHelper1] (
+	[titleHelper_id]	INT				NOT NULL IDENTITY(1,1) PRIMARY KEY,
+	[title]				NVARCHAR(32)	NOT NULL
+);
+GO
+
+CREATE TABLE [titleHelper2] (
+	[titleHelper_id]	INT				NOT NULL IDENTITY(1,1) PRIMARY KEY,
+	[title]				NVARCHAR(32)	NOT NULL
+);
+GO
+
+CREATE TABLE [titleHelper3] (
+	[titleHelper_id]	INT				NOT NULL IDENTITY(1,1) PRIMARY KEY,
+	[title]				NVARCHAR(32)	NOT NULL
+);
+GO
 
 --about 100 firstnames
 
@@ -1667,6 +1847,194 @@ INSERT INTO [usernameHelper] ([username]) VALUES ('prolapsemckinley');
 INSERT INTO [usernameHelper] ([username]) VALUES ('longingconvex');
 GO
 
+--167 title fragments all smaller than 10 chars
+
+
+INSERT INTO [titleHelper1] ([title]) VALUES ('Castle');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Catalogue');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Cath');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Chains');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Changed');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Chapter');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Children');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Chin');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Chlorine');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Chocolate');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Ciao!');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Clan');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Class');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Cleaner');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Clear');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Climbing');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Clipped');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Clustered');
+INSERT INTO [titleHelper1] ([title]) VALUES ('CN1');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Cobalt');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Cocteau');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Colourbox');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Come');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Comforts');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Complete');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Cookie');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Counting');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Country');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Crime');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Cross');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Cry');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Curse');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Dagger');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Dance');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Dark');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Day');
+INSERT INTO [titleHelper1] ([title]) VALUES ('De-Luxe');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Dead');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Death');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Debaser');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Demo');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Demon');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Desire');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Detrola');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Diamonds');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Dig');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Dirt');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Distant');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Divine');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Dizzy');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Doghouse');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Donde');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Dream');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Dreams');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Eaters');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Enjoyment');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Entries');
+INSERT INTO [titleHelper1] ([title]) VALUES ('esta');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Fingers');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Fire');
+INSERT INTO [titleHelper1] ([title]) VALUES ('For');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Frank');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Girl');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Gun');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Hammer');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Hearts');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Heidi');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Here');
+INSERT INTO [titleHelper1] ([title]) VALUES ('II');
+INSERT INTO [titleHelper1] ([title]) VALUES ('Insects');
+INSERT INTO [titleHelper1] ([title]) VALUES ('is');
+
+GO
+
+
+INSERT INTO [titleHelper2] ([title]) VALUES ('Bug');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Burden');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Burning');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Cage');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Calendar');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Calistan');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Can');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Cant');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Candida');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Carnival');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Carolyns');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Carroll');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Cassette');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Castle');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Catalogue');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Cath');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Chains');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Changed');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Chapter');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Children');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Chin');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Chlorine');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Chocolate');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Ciao!');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Clan');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Class');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Cleaner');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Clear');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Climbing');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Clipped');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Clustered');
+INSERT INTO [titleHelper2] ([title]) VALUES ('CN1');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Cobalt');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Cocteau');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Colourbox');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Come');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Comforts');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Complete');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Cookie');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Counting');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Country');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Crime');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Cross');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Cry');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Curse');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Dagger');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Dance');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Dark');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Day');
+INSERT INTO [titleHelper2] ([title]) VALUES ('De-Luxe');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Dead');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Death');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Debaser');
+INSERT INTO [titleHelper2] ([title]) VALUES ('Demo');
+GO
+
+
+INSERT INTO [titleHelper3] ([title]) VALUES ('Bride');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Bright');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Buddha');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Bug');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Burden');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Burning');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Cage');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Calendar');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Calistan');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Can');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Cant');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Candida');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Carnival');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Carolyns');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Carroll');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Cassette');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Castle');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Catalogue');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Cath');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Chains');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Changed');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Chapter');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Children');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Chin');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Chlorine');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Chocolate');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Ciao!');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Clan');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Class');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Cleaner');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Clear');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Climbing');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Clipped');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Clustered');
+INSERT INTO [titleHelper3] ([title]) VALUES ('CN1');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Cobalt');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Cocteau');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Colourbox');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Come');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Comforts');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Complete');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Cookie');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Counting');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Country');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Crime');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Cross');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Cry');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Curse');
+INSERT INTO [titleHelper3] ([title]) VALUES ('Dagger');
+GO
+
+
+
 --fill username table
 INSERT INTO [user] ([username], [firstname], [lastname], [password], [email])
 SELECT LEFT(cast(Concat(firstnameHelper.firstname, surnameHelper.surname, usernameHelper.username) AS nvarchar), 32), firstnameHelper.firstname, surnameHelper.surname, '1234', Concat(firstnameHelper.firstname, '@', surnameHelper.surname, '.com')
@@ -1675,9 +2043,12 @@ CROSS JOIN surnameHelper
 CROSS JOIN usernameHelper;
 GO
 
+SELECT * FROM [user]
+
 --fill interpret table
-INSERT INTO [interpret] ([name], [origin], [fk_genre_id])
-SELECT TOP 10000 Concat(firstnameHelper.firstname, surnameHelper.surname), 'United Kingdom', genre.genre_id
+
+INSERT INTO [interpret] ([name], [origin], [website], [fk_genre_id])
+SELECT TOP 10000 Concat(firstnameHelper.firstname, ' ', surnameHelper.surname), 'United Kingdom', 'foo.bar.com', genre.genre_id
 FROM firstnameHelper
 CROSS JOIN surnameHelper
 INNER JOIN genre
@@ -1686,33 +2057,192 @@ GO
 
 SELECT * FROM [interpret];
 
+
+
 --fill album table
---DECLARE 
---
---SET @counter = 1;
---
---WHILE @counter < 5 
---   BEGIN  
---      SELECT RAND() Random_Number  
---      SET @counter = @counter + 1  
---   END;  
---GO  
+DECLARE @counter INT
+SET @counter = 1
+
+--prepare album table, create over 50.000 albums
+WHILE @counter < 501
+   BEGIN  
+		INSERT INTO [album] ([name], [releaseyear])
+		SELECT  CONCAT(titleHelper1.title, @counter), 1970
+		FROM titleHelper1
+
+		SET @counter = @counter + 1;
+	END;
+GO
+
+--enter correct year, label and genre
+DECLARE @albumCount INT
+DECLARE @genreCount INT
+DECLARE @labelCount INT
+DECLARE @genreID INT
+DECLARE @labelID INT
+DECLARE @counter INT
+
+SET @counter = 1
+SET @albumCount = (SELECT Count(*) FROM album) + 1
+SET @genreCount = (SELECT Count(*) FROM genre)
+SET @labelCount = (SELECT Count(*) FROM label)
+
+WHILE @counter < @albumCount 
+   BEGIN  
+		SET @genreID = (@counter % @genreCount) + 1
+		SET @labelID = (@counter % @labelCount) + 1
+
+		UPDATE 	[album]
+		SET 	[releaseyear] = Round(1950 + (Rand() * 68), 0),
+				[fk_genre_id] = @genreID,
+				[fk_label_id] = @labelID
+		WHERE album_id = @counter
+
+		SET @counter = @counter + 1;
+	END;
+GO
+
+SELECT * FROM album
+
+--prepare title table ([name], [duration], [bitrate])
+INSERT INTO title ([name], [duration], [bitrate], [fk_genre_id])
+SELECT Concat(titleHelper1.title, ' ', titleHelper2.title, ' ', titleHelper3.title), Round(Rand() * 500, 0), 22000, 1
+FROM titleHelper1
+CROSS JOIN titleHelper2
+CROSS JOIN titleHelper3;
+GO
+
+-------------------------------------------------------------------------------------------
+GO
+DECLARE @titlenumber INT
+
+DECLARE @title_titlenumber INT
+DECLARE @title_genre_id INT
+DECLARE @title_album_id INT
+
+DECLARE @album_genre_id INT
+DECLARE @album_album_id INT
 
 
---fill title table
 
+--Titlecursor
+DECLARE title_cursor CURSOR FOR
+    SELECT dbo.title.titlenumber, dbo.title .fk_genre_id, dbo.title .fk_album_id
+    FROM dbo.title
+    FOR UPDATE OF dbo.title.titlenumber, dbo.title .fk_genre_id, dbo.title .fk_album_id
+OPEN title_cursor;
+
+--album_cursor
+DECLARE album_cursor CURSOR FOR
+    SELECT dbo.album.album_id, dbo.album.fk_genre_id
+    FROM dbo.album
+    FOR READ ONLY
+OPEN album_cursor;
+
+FETCH NEXT FROM album_cursor
+INTO @album_album_id, @album_genre_id
+
+WHILE (@@FETCH_STATUS = 0)
+BEGIN
+
+	FETCH NEXT FROM title_cursor
+	INTO 	@title_titlenumber,
+			@title_genre_id,
+			@title_album_id
+
+	SET @titlenumber = 1
+	WHILE @titlenumber < 12 AND @@FETCH_STATUS = 0
+		BEGIN
+			UPDATE dbo.title
+				SET dbo.title.titlenumber = @titlenumber,
+					dbo.title.fk_genre_id = @album_genre_id,
+					dbo.title.fk_album_id = @album_album_id
+			WHERE CURRENT OF title_cursor
+
+			FETCH NEXT FROM title_cursor
+			INTO 	@title_titlenumber,
+					@title_genre_id,
+					@title_album_id
+			SET @titlenumber = @titlenumber + 1
+		END
+
+	FETCH NEXT FROM album_cursor
+	INTO @album_album_id, @album_genre_id
+END
+
+CLOSE title_cursor;
+CLOSE album_cursor;
+
+DEALLOCATE title_cursor;
+DEALLOCATE album_cursor;
+
+SELECT * FROM title
 --fill title_interpret table
+DECLARE @counter INT
+
+DECLARE @titleCount INT
+DECLARE @interpretCount INT
+
+SET @counter = 1
+SET @titleCount = (SELECT COUNT (*) FROM title)
+SET @interpretCount = (SELECT COUNT (*) FROM interpret)
+
+WHILE @counter < (@titleCount + 1)
+   BEGIN
+   		INSERT INTO title_interpret ([fk_title_id], [fk_interpret_id])
+   		VALUES (@counter, ((@counter % @interpretCount) + 1))
+
+		SET @counter = @counter + 1;
+	END;
+GO
+
+SELECT * FROM title_interpret
+ORDER BY fk_title_id
 
 --fill rating table
+INSERT INTO [rating] ([ratingvalue], [fk_title_id], [fk_user_id])
+SELECT 5, dbo.title.title_id, [user].user_id
+FROM title
+LEFT OUTER JOIN [user]
+ON title.title_id = [user].user_id
 
 --playlist table
+INSERT INTO [playlist] ([title], [fk_genre_id], [fk_user_id])
+SELECT TOP 100 Concat(Left([user].username, 19), '''s playlist'), genre.genre_id, [user].user_id
+FROM [user]
+JOIN genre
+on (([user].user_id % (SELECT Count (*) FROM genre))+1) = genre_id;
+
+SELECT * FROM playlist
 
 --fill playlist_title table
+DECLARE @counter INT
+
+SET @counter = 0
+WHILE @counter < 100
+	BEGIN
+		INSERT INTO [playlist_title] ([fk_playlist_id], [fk_title_id])
+		SELECT playlist.playlist_id, title.title_id
+		FROM playlist
+		join title
+		On playlist_id+@counter = title_id
+
+		SET @counter = @counter + 1
+	END;
+GO
+SELECT * FROM playlist_title
 
 
 DROP TABLE [usernameHelper];
 DROP TABLE [firstnameHelper];
 DROP TABLE [surnameHelper];
+DROP TABLE [titleHelper1];
+DROP TABLE [titleHelper2];
+DROP TABLE [titleHelper3];
+
+GO  
+SET NOCOUNT OFF; 
+GO
 
 
 
@@ -1754,3 +2284,16 @@ AS
 	INNER JOIN [title_interpret] AS ti ON ti.fk_title_id = t.title_id
 	GROUP BY t.[fk_album_id];
 GO
+
+
+USE [Music];
+GO
+
+CREATE NONCLUSTERED INDEX title_index
+ON [title] ([name]);
+
+CREATE NONCLUSTERED INDEX username_index
+ON [user] ([username]);
+
+CREATE NONCLUSTERED INDEX genre_index
+ON [genre] ([name]);

@@ -2,7 +2,7 @@ USE [Music];
 GO
 
 CREATE NONCLUSTERED INDEX title_index
-ON title ([name]);
+ON [title] ([name]);
 
 CREATE NONCLUSTERED INDEX username_index
 ON [user] ([username]);
