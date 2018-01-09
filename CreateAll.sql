@@ -2289,11 +2289,11 @@ GO
 USE [Music];
 GO
 
-CREATE NONCLUSTERED INDEX title_index
+CREATE NONCLUSTERED INDEX DX_TitleIndex
 ON [title] ([name]);
 
-CREATE NONCLUSTERED INDEX username_index
+CREATE NONCLUSTERED INDEX DX_UsernameIndex
 ON [user] ([username]);
 
-CREATE NONCLUSTERED INDEX genre_index
+CREATE NONCLUSTERED INDEX DX_GenreIndex
 ON [genre] ([name]);
