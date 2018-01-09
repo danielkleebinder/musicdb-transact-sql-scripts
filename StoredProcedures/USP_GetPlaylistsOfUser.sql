@@ -6,52 +6,47 @@ GO
 -- using the object id to check if the stored procedure with the given name already --
 -- exists. If it exists, it will be dropped from the context.                       --
 --------------------------------------------------------------------------------------
-IF OBJECT_ID('USP_FindPlaylist', 'P') IS NOT NULL
-	DROP PROCEDURE [USP_FindPlaylist];
+IF OBJECT_ID('USP_GetPlaylistsOfUser', 'P') IS NOT NULL
+	DROP PROCEDURE [USP_GetPlaylistsOfUser];
 GO
 
 
 ----------------------------------------------------------------
 -- creation of a stored procedure with the following purpose: --
---	Get Titles of Playlists that match the search parameter   --
---	if parameter is empty, return all playlists               --
+--    Get all Playlists of a user                                               --
 ----------------------------------------------------------------
-CREATE PROCEDURE [USP_FindPlaylist] (
-	@Playlistname	NVARCHAR(32)
+CREATE PROCEDURE [USP_GetPlaylistsOfUser] (
+	@UserID	INT
 )
 AS BEGIN
 	-- no console outputs are needed here
 	SET NOCOUNT ON;
-	BEGIN TRY;
-		IF (@Playlistname = '')
-			SELECT *
-			FROM [playlist];
-		ELSE
-			SELECT *
-			FROM [playlist]
-			WHERE [title] LIKE Concat('%', @Playlistname, '%')
-	END TRY BEGIN CATCH;
-		RETURN 1;
-	END CATCH;
+
+	-- use transactions to rollback invalid statements
+		BEGIN TRY;
+			SELECT * FROM [playlist] WHERE [fk_user_id] = @UserID
+		END TRY BEGIN CATCH;
+			
+			RETURN 1;
+		END CATCH;
 END
 GO
 
 ---------------------------------------------------------------------------
 -- run the stored procedure to check correct behaviour and return values --
 ---------------------------------------------------------------------------
+EXEC dbo.[USP_GetPlaylistsOfUser]
+	@UserID = 1;
 
--- with specified playlist title
-EXEC dbo.[USP_FindPlaylist]
-	@Playlistname = 'out';
-
--- get all playlists when title is empty
-EXEC dbo.[USP_FindPlaylist]
-	@Playlistname = '';
 
 ---------------------------------------------------------------------------
 -- add a test dataset to be sure the results given by the stored         --
 -- procedure are correct.                                                --
 ---------------------------------------------------------------------------
-INSERT INTO [playlist] ([description], [title], [fk_genre_id], [fk_user_id]) VALUES ('Very nice grooves', 'Groovy Playlist', 2, 1);
-INSERT INTO [playlist] ([description], [title], [fk_genre_id], [fk_user_id]) VALUES ('Trash', 'Bad Playlist', 3, 1);
-INSERT INTO [playlist] ([description], [title], [fk_genre_id], [fk_user_id]) VALUES ('Trying something new, hopy you like it', 'Diving in the Stars', 4, 1);
+INSERT INTO
+	[table] ([col1], [col2], [coln])
+	VALUES (val1, val2, valn);
+
+-- Delete Test Dataset
+DELETE FROM [table]
+WHERE [col1] = val1;

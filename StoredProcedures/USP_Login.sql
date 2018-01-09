@@ -18,16 +18,15 @@ GO
 ----------------------------------------------------------------
 CREATE PROCEDURE [USP_Login] (
 	@Username	NVARCHAR(32),
-	@Password	NVARCHAR(32),
-	@Result		INT = 0 OUTPUT
+	@Password	NVARCHAR(32)
 )
 AS BEGIN
 	-- no console outputs are needed here
-	SET NOCOUNT ON;
+	SET NOCOUNT OFF;
 
 	-- do a simple select to return the number of affected rows for a
 	-- specific user
-	SELECT @Result = Count(*) FROM [user] AS usr
+	SELECT [user_id], [username], [firstname], [lastname], [password], [email] FROM [user] AS usr
 		WHERE usr.[username] = @Username
 		AND	  usr.[password] = @Password;
 END
@@ -36,7 +35,7 @@ GO
 ---------------------------------------------------------------------------
 -- run the stored procedure to check correct behaviour and return values --
 ---------------------------------------------------------------------------
-DECLARE @Out INT;
+/*DECLARE @Out INT;
 EXEC dbo.[USP_Login]
 	@Username = 'Peter8855',
 	@Password = 'mYp@ccW#r1',
@@ -54,4 +53,4 @@ INSERT INTO
 
 -- Delete Test Dataset
 DELETE FROM [user]
-WHERE [username] = 'Peter8855';
+WHERE [username] = 'Peter8855';*/
