@@ -2126,26 +2126,26 @@ DECLARE @album_album_id INT
 
 
 --Titlecursor
-DECLARE title_cursor CURSOR FOR
+DECLARE CUR_TitleCursor CURSOR FOR
     SELECT dbo.title.titlenumber, dbo.title .fk_genre_id, dbo.title .fk_album_id
     FROM dbo.title
     FOR UPDATE OF dbo.title.titlenumber, dbo.title .fk_genre_id, dbo.title .fk_album_id
-OPEN title_cursor;
+OPEN CUR_TitleCursor;
 
---album_cursor
-DECLARE album_cursor CURSOR FOR
+--CUR_AlbumCursor
+DECLARE CUR_AlbumCursor CURSOR FOR
     SELECT dbo.album.album_id, dbo.album.fk_genre_id
     FROM dbo.album
     FOR READ ONLY
-OPEN album_cursor;
+OPEN CUR_AlbumCursor;
 
-FETCH NEXT FROM album_cursor
+FETCH NEXT FROM CUR_AlbumCursor
 INTO @album_album_id, @album_genre_id
 
 WHILE (@@FETCH_STATUS = 0)
 BEGIN
 
-	FETCH NEXT FROM title_cursor
+	FETCH NEXT FROM CUR_TitleCursor
 	INTO 	@title_titlenumber,
 			@title_genre_id,
 			@title_album_id
@@ -2157,24 +2157,24 @@ BEGIN
 				SET dbo.title.titlenumber = @titlenumber,
 					dbo.title.fk_genre_id = @album_genre_id,
 					dbo.title.fk_album_id = @album_album_id
-			WHERE CURRENT OF title_cursor
+			WHERE CURRENT OF CUR_TitleCursor
 
-			FETCH NEXT FROM title_cursor
+			FETCH NEXT FROM CUR_TitleCursor
 			INTO 	@title_titlenumber,
 					@title_genre_id,
 					@title_album_id
 			SET @titlenumber = @titlenumber + 1
 		END
 
-	FETCH NEXT FROM album_cursor
+	FETCH NEXT FROM CUR_AlbumCursor
 	INTO @album_album_id, @album_genre_id
 END
 
-CLOSE title_cursor;
-CLOSE album_cursor;
+CLOSE CUR_TitleCursor;
+CLOSE CUR_AlbumCursor;
 
-DEALLOCATE title_cursor;
-DEALLOCATE album_cursor;
+DEALLOCATE CUR_TitleCursor;
+DEALLOCATE CUR_AlbumCursor;
 
 SELECT * FROM title
 --fill title_interpret table
@@ -2184,8 +2184,8 @@ DECLARE @titleCount INT
 DECLARE @interpretCount INT
 
 SET @counter = 1
-SET @titleCount = (SELECT COUNT (*) FROM title)
-SET @interpretCount = (SELECT COUNT (*) FROM interpret)
+SET @titleCount = (SELECT Count (*) FROM title)
+SET @interpretCount = (SELECT Count (*) FROM interpret)
 
 WHILE @counter < (@titleCount + 1)
    BEGIN
