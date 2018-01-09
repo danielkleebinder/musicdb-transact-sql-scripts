@@ -1,7 +1,8 @@
 -- Create the music database using
 -- standard Transact-SQL syntax.
 
-CREATE DATABASE [Music];
+IF (DB_ID(N'Music') IS NULL)
+	CREATE DATABASE [Music];
 
 
 USE [Music];
@@ -284,6 +285,43 @@ SELECT @Out;
 -- add a test dataset to be sure the results given by the stored         --
 -- procedure are correct.                                                --
 ---------------------------------------------------------------------------
+
+
+
+USE [Music];
+GO
+
+
+--------------------------------------------------------------------------------------
+-- using the object id to check if the stored procedure with the given name already --
+-- exists. If it exists, it will be dropped from the context.                       --
+--------------------------------------------------------------------------------------
+IF OBJECT_ID('USP_GetPlaylistsOfUser', 'P') IS NOT NULL
+	DROP PROCEDURE [USP_GetPlaylistsOfUser];
+GO
+
+
+----------------------------------------------------------------
+-- creation of a stored procedure with the following purpose: --
+--    Get all Playlists of a user                             --
+----------------------------------------------------------------
+CREATE PROCEDURE [USP_GetPlaylistsOfUser] (
+	@UserID	INT
+)
+AS BEGIN
+	-- no console outputs are needed here
+	SET NOCOUNT ON;
+
+	-- use transactions to rollback invalid statements
+		BEGIN TRY;
+			SELECT * FROM [playlist] WHERE [fk_user_id] = @UserID
+		END TRY BEGIN CATCH;
+			
+			RETURN 1;
+		END CATCH;
+END
+GO
+
 
 
 
@@ -579,29 +617,6 @@ AS BEGIN
 END
 GO
 
----------------------------------------------------------------------------
--- run the stored procedure to check correct behaviour and return values --
----------------------------------------------------------------------------
-/*DECLARE @Out INT;
-EXEC dbo.[USP_Login]
-	@Username = 'Peter8855',
-	@Password = 'mYp@ccW#r1',
-	@Result = @Out OUTPUT;
-SELECT @Out;
-
-
----------------------------------------------------------------------------
--- add a test dataset to be sure the results given by the stored         --
--- procedure are correct.                                                --
----------------------------------------------------------------------------
-INSERT INTO
-	[user] ([username], [firstname], [lastname], [password], [email])
-	VALUES ('Peter8855', 'Peter', 'Müller', 'mYp@ccW#r1', 'peter.müller@gmail.com');
-
--- Delete Test Dataset
-DELETE FROM [user]
-WHERE [username] = 'Peter8855';*/
-
 
 
 
@@ -794,9 +809,6 @@ EXEC dbo.[USP_FindPlaylist]
 -- add a test dataset to be sure the results given by the stored         --
 -- procedure are correct.                                                --
 ---------------------------------------------------------------------------
-INSERT INTO [playlist] ([description], [title], [fk_genre_id], [fk_user_id]) VALUES ('Very nice grooves', 'Groovy Playlist', 2, 1);
-INSERT INTO [playlist] ([description], [title], [fk_genre_id], [fk_user_id]) VALUES ('Trash', 'Bad Playlist', 3, 1);
-INSERT INTO [playlist] ([description], [title], [fk_genre_id], [fk_user_id]) VALUES ('Trying something new, hopy you like it', 'Diving in the Stars', 4, 1);
 
 
 USE [Music];
